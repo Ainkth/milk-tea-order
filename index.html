@@ -79,13 +79,13 @@ input.error, select.error { border-color: red; animation: shake 0.3s; }
 </div>
 
 <script>
-// 初始化 Supabase v2
+// ✅ 初始化 Supabase v2，使用 const supabase，不要 window.supabase
 const supabase = supabase.createClient(
   "https://pgcqmgpenpntkagdgxzj.supabase.co",
   "sb_publishable_rGawkinb8jxvxYOFl1F-ZA_0oGnhju2"
 );
 
-// 绑定事件
+// 切换“其他”输入框
 document.getElementById("iceSelect").onchange = toggleIceOther;
 document.getElementById("sugarSelect").onchange = toggleSugarOther;
 
@@ -103,6 +103,7 @@ function toggleSugarOther(){
   if(select.value==="其他") other.focus(); else other.value="";
 }
 
+// 显示提示
 function showFeedback(msg,isSuccess){
     const feedback = document.getElementById("feedback");
     feedback.textContent = msg;
@@ -113,12 +114,14 @@ function showFeedback(msg,isSuccess){
     }
 }
 
+// 表单验证动画
 function setError(el,msg){
     el.classList.add("error");
     setTimeout(()=>el.classList.remove("error"),500);
     showFeedback(msg,false);
 }
 
+// 提交按钮事件
 document.getElementById("submitBtn").onclick = async function(){
     const shop = document.getElementById("shop").value;
     const drink = document.getElementById("drink").value.trim();
@@ -128,19 +131,22 @@ document.getElementById("submitBtn").onclick = async function(){
     if(sugar==="其他") sugar=document.getElementById("sugarOther").value.trim();
     const note = document.getElementById("note").value.trim();
 
+    // 表单验证
     if(!shop){showFeedback("请选择奶茶店",false);return;}
     if(!drink){showFeedback("请输入奶茶名称",false);return;}
     if(drink.length>50){showFeedback("奶茶名称不能超过50字",false);return;}
     if(!ice){showFeedback("请选择或填写冰度",false);return;}
     if(!sugar){showFeedback("请选择或填写糖度",false);return;}
 
-    const {data,error} = await supabase
+    // 插入数据库
+    const {data, error} = await supabase
         .from("submissions")
         .insert([{nickname:shop, content:drink, ice:ice, sugar:sugar, note:note}]);
 
     if(error) showFeedback("提交失败："+error.message,false);
     else{
         showFeedback("提交成功！",true);
+        // 清空表单
         document.getElementById("shop").value="";
         document.getElementById("drink").value="";
         document.getElementById("iceSelect").value="";
