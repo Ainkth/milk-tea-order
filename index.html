@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>你想喝什么奶茶</title>
+<!-- Favicon -->
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2920/2920331.png" type="image/png">
 <style>
 body{font-family:Arial,sans-serif;margin:50px;background:#f0f0f0}
 h2{text-align:center}
@@ -16,14 +18,8 @@ label span{color:red}
 .feedback.error{color:red;}
 input.error, select.error { border-color: red; animation: shake 0.3s; }
 @keyframes shake {0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); }}
-/* 新增成功弹出动画 */
-.feedback.slide-down {
-  animation: slideDown 0.5s ease forwards;
-}
-@keyframes slideDown {
-  0% { opacity: 0; transform: translateY(-20px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
+.feedback.slide-down { animation: slideDown 0.5s ease forwards; }
+@keyframes slideDown { 0% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 1; transform: translateY(0); } }
 .feedback.fadeout { opacity: 1; transition: opacity 2s ease; }
 .feedback.fadeout.hide { opacity: 0; }
 </style>
@@ -83,12 +79,11 @@ input.error, select.error { border-color: red; animation: shake 0.3s; }
 </div>
 
 <script>
-// 防止重复声明 supabase
-if (!window.supabase) {
-    const supabaseUrl = "https://pgcqmgpenpntkagdgxzj.supabase.co";
-    const supabaseKey = "sb_publishable_rGawkinb8jxvxYOFl1F-ZA_0oGnhju2";
-    window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
-}
+// 初始化 Supabase v2
+const supabase = supabase.createClient(
+  "https://pgcqmgpenpntkagdgxzj.supabase.co",
+  "sb_publishable_rGawkinb8jxvxYOFl1F-ZA_0oGnhju2"
+);
 
 // 绑定事件
 document.getElementById("iceSelect").onchange = toggleIceOther;
@@ -97,38 +92,24 @@ document.getElementById("sugarSelect").onchange = toggleSugarOther;
 function toggleIceOther(){
   const select = document.getElementById("iceSelect");
   const other = document.getElementById("iceOther");
-  if(select.value === "其他"){
-      other.style.display = "block";
-      other.focus();
-  } else {
-      other.style.display = "none";
-      other.value = "";
-  }
+  other.style.display = (select.value==="其他")?"block":"none";
+  if(select.value==="其他") other.focus(); else other.value="";
 }
 
 function toggleSugarOther(){
   const select = document.getElementById("sugarSelect");
   const other = document.getElementById("sugarOther");
-  if(select.value === "其他"){
-      other.style.display = "block";
-      other.focus();
-  } else {
-      other.style.display = "none";
-      other.value = "";
-  }
+  other.style.display = (select.value==="其他")?"block":"none";
+  if(select.value==="其他") other.focus(); else other.value="";
 }
 
 function showFeedback(msg,isSuccess){
     const feedback = document.getElementById("feedback");
     feedback.textContent = msg;
     feedback.className = "feedback "+(isSuccess?"success slide-down":"error");
-    
     if(isSuccess){
         setTimeout(()=>{feedback.classList.add("fadeout","hide")},1500);
-        setTimeout(()=>{
-            feedback.textContent="";
-            feedback.className="feedback";
-        },3000);
+        setTimeout(()=>{feedback.textContent="";feedback.className="feedback";},3000);
     }
 }
 
@@ -139,47 +120,34 @@ function setError(el,msg){
 }
 
 document.getElementById("submitBtn").onclick = async function(){
-    const shop = document.getElementById("shop");
-    const drink = document.getElementById("drink");
-    const iceSelect = document.getElementById("iceSelect");
-    const iceOther = document.getElementById("iceOther");
-    const sugarSelect = document.getElementById("sugarSelect");
-    const sugarOther = document.getElementById("sugarOther");
-    const note = document.getElementById("note");
+    const shop = document.getElementById("shop").value;
+    const drink = document.getElementById("drink").value.trim();
+    let ice = document.getElementById("iceSelect").value;
+    if(ice==="其他") ice=document.getElementById("iceOther").value.trim();
+    let sugar = document.getElementById("sugarSelect").value;
+    if(sugar==="其他") sugar=document.getElementById("sugarOther").value.trim();
+    const note = document.getElementById("note").value.trim();
 
-    let ice = iceSelect.value;
-    if(ice === "其他") ice = iceOther.value.trim();
+    if(!shop){showFeedback("请选择奶茶店",false);return;}
+    if(!drink){showFeedback("请输入奶茶名称",false);return;}
+    if(drink.length>50){showFeedback("奶茶名称不能超过50字",false);return;}
+    if(!ice){showFeedback("请选择或填写冰度",false);return;}
+    if(!sugar){showFeedback("请选择或填写糖度",false);return;}
 
-    let sugar = sugarSelect.value;
-    if(sugar === "其他") sugar = sugarOther.value.trim();
+    const {data,error} = await supabase
+        .from("submissions")
+        .insert([{nickname:shop, content:drink, ice:ice, sugar:sugar, note:note}]);
 
-    if(!shop.value){setError(shop,"请选择奶茶店");return;}
-    if(!drink.value.trim()){setError(drink,"请输入奶茶名称");return;}
-    if(drink.value.trim().length>50){setError(drink,"奶茶名称不能超过50字");return;}
-    if(!ice){setError(iceSelect,"请选择或填写冰度");return;}
-    if(ice.length>20){setError(iceSelect,"冰度不能超过20字");return;}
-    if(!sugar){setError(sugarSelect,"请选择或填写糖度");return;}
-    if(sugar.length>20){setError(sugarSelect,"糖度不能超过20字");return;}
-
-    const {error} = await window.supabase.from("submissions").insert([{
-        nickname: shop.value,
-        content: drink.value.trim(),
-        ice: ice,
-        sugar: sugar,
-        note: note.value.trim()
-    }]);
-
-    if(error){
-        showFeedback("提交失败："+error.message,false);
-    } else {
+    if(error) showFeedback("提交失败："+error.message,false);
+    else{
         showFeedback("提交成功！",true);
-        shop.value="";
-        drink.value="";
-        iceSelect.value="";
-        iceOther.value="";
-        sugarSelect.value="";
-        sugarOther.value="";
-        note.value="";
+        document.getElementById("shop").value="";
+        document.getElementById("drink").value="";
+        document.getElementById("iceSelect").value="";
+        document.getElementById("iceOther").value="";
+        document.getElementById("sugarSelect").value="";
+        document.getElementById("sugarOther").value="";
+        document.getElementById("note").value="";
     }
 }
 </script>
