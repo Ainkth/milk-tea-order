@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>你想喝什么奶茶</title>
-<!-- Favicon -->
 <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2920/2920331.png" type="image/png">
 <style>
 body{font-family:Arial,sans-serif;margin:50px;background:#f0f0f0}
@@ -79,13 +78,13 @@ input.error, select.error { border-color: red; animation: shake 0.3s; }
 </div>
 
 <script>
-// ✅ 初始化 Supabase v2，使用 const supabase，不要 window.supabase
-const supabase = supabase.createClient(
+// 初始化 Supabase，使用 client 避免 window.supabase 报错
+const client = supabase.createClient(
   "https://pgcqmgpenpntkagdgxzj.supabase.co",
   "sb_publishable_rGawkinb8jxvxYOFl1F-ZA_0oGnhju2"
 );
 
-// 切换“其他”输入框
+// 冰度/糖度“其他”切换
 document.getElementById("iceSelect").onchange = toggleIceOther;
 document.getElementById("sugarSelect").onchange = toggleSugarOther;
 
@@ -114,14 +113,14 @@ function showFeedback(msg,isSuccess){
     }
 }
 
-// 表单验证动画
+// 表单错误动画
 function setError(el,msg){
     el.classList.add("error");
     setTimeout(()=>el.classList.remove("error"),500);
     showFeedback(msg,false);
 }
 
-// 提交按钮事件
+// 提交表单
 document.getElementById("submitBtn").onclick = async function(){
     const shop = document.getElementById("shop").value;
     const drink = document.getElementById("drink").value.trim();
@@ -138,15 +137,14 @@ document.getElementById("submitBtn").onclick = async function(){
     if(!ice){showFeedback("请选择或填写冰度",false);return;}
     if(!sugar){showFeedback("请选择或填写糖度",false);return;}
 
-    // 插入数据库
-    const {data, error} = await supabase
+    // 使用 client 插入数据
+    const {data, error} = await client
         .from("submissions")
         .insert([{nickname:shop, content:drink, ice:ice, sugar:sugar, note:note}]);
 
     if(error) showFeedback("提交失败："+error.message,false);
     else{
         showFeedback("提交成功！",true);
-        // 清空表单
         document.getElementById("shop").value="";
         document.getElementById("drink").value="";
         document.getElementById("iceSelect").value="";
