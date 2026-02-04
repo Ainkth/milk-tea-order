@@ -11,30 +11,21 @@ select,input,textarea{width:100%;padding:8px;margin:6px 0;box-sizing:border-box;
 button{padding:10px 20px;font-size:16px;border:none;border-radius:4px;background:#FF7043;color:white;cursor:pointer}
 button:hover{background:#FF5722}
 label span{color:red}
-.feedback{margin-top:10px;font-weight:bold;}
+.feedback{margin-top:10px;font-weight:bold;position:relative;}
 .feedback.success{color:green;}
 .feedback.error{color:red;}
-
-input.error, select.error {
-  border-color: red;
-  animation: shake 0.3s;
+input.error, select.error { border-color: red; animation: shake 0.3s; }
+@keyframes shake {0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); }}
+/* 新增成功弹出动画 */
+.feedback.slide-down {
+  animation: slideDown 0.5s ease forwards;
 }
-
-@keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  50% { transform: translateX(5px); }
-  75% { transform: translateX(-5px); }
-  100% { transform: translateX(0); }
+@keyframes slideDown {
+  0% { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
-
-.feedback.fadeout {
-  opacity: 1;
-  transition: opacity 2s ease;
-}
-.feedback.fadeout.hide {
-  opacity: 0;
-}
+.feedback.fadeout { opacity: 1; transition: opacity 2s ease; }
+.feedback.fadeout.hide { opacity: 0; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -92,9 +83,12 @@ input.error, select.error {
 </div>
 
 <script>
-const supabaseUrl = "https://pgcqmgpenpntkagdgxzj.supabase.co";
-const supabaseKey = "sb_publishable_rGawkinb8jxvxYOFl1F-ZA_0oGnhju2";
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+// 防止重复声明 supabase
+if (!window.supabase) {
+    const supabaseUrl = "https://pgcqmgpenpntkagdgxzj.supabase.co";
+    const supabaseKey = "sb_publishable_rGawkinb8jxvxYOFl1F-ZA_0oGnhju2";
+    window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
+}
 
 // 绑定事件
 document.getElementById("iceSelect").onchange = toggleIceOther;
@@ -127,13 +121,13 @@ function toggleSugarOther(){
 function showFeedback(msg,isSuccess){
     const feedback = document.getElementById("feedback");
     feedback.textContent = msg;
-    feedback.className = "feedback "+(isSuccess?"success fadeout":"error");
+    feedback.className = "feedback "+(isSuccess?"success slide-down":"error");
     
     if(isSuccess){
-        setTimeout(()=>{feedback.classList.add("hide")},500);
+        setTimeout(()=>{feedback.classList.add("fadeout","hide")},1500);
         setTimeout(()=>{
             feedback.textContent="";
-            feedback.classList.remove("fadeout","hide");
+            feedback.className="feedback";
         },3000);
     }
 }
@@ -167,7 +161,7 @@ document.getElementById("submitBtn").onclick = async function(){
     if(!sugar){setError(sugarSelect,"请选择或填写糖度");return;}
     if(sugar.length>20){setError(sugarSelect,"糖度不能超过20字");return;}
 
-    const {error} = await supabase.from("submissions").insert([{
+    const {error} = await window.supabase.from("submissions").insert([{
         nickname: shop.value,
         content: drink.value.trim(),
         ice: ice,
