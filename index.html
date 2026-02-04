@@ -61,7 +61,7 @@ input.error, select.error {
 <input type="text" id="drink" placeholder="输入奶茶名称">
 
 <label for="ice">冰度：<span>*</span></label>
-<select id="iceSelect" onchange="toggleIceOther()">
+<select id="iceSelect">
   <option value="">请选择冰度</option>
   <option value="正常冰">正常冰</option>
   <option value="少冰">少冰</option>
@@ -73,7 +73,7 @@ input.error, select.error {
 <input type="text" id="iceOther" placeholder="请输入冰度" style="display:none">
 
 <label for="sugar">糖度：<span>*</span></label>
-<select id="sugarSelect" onchange="toggleSugarOther()">
+<select id="sugarSelect">
   <option value="">请选择糖度</option>
   <option value="全糖">全糖</option>
   <option value="七分糖">七分糖</option>
@@ -92,70 +92,72 @@ input.error, select.error {
 </div>
 
 <script>
-const supabaseUrl="https://pgcqmgpenpntkagdgxzj.supabase.co"
-const supabaseKey="sb_publishable_rGawkinb8jxvxYOFl1F-ZA_0oGnhju2"
-const supabase=supabase.createClient(supabaseUrl,supabaseKey)
+const supabaseUrl = "https://pgcqmgpenpntkagdgxzj.supabase.co";
+const supabaseKey = "sb_publishable_rGawkinb8jxvxYOFl1F-ZA_0oGnhju2";
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+// 绑定事件
+document.getElementById("iceSelect").onchange = toggleIceOther;
+document.getElementById("sugarSelect").onchange = toggleSugarOther;
 
 function toggleIceOther(){
-  const select=document.getElementById("iceSelect")
-  const other=document.getElementById("iceOther")
-  if(select.value==="其他"){
-      other.style.display="block"
-      other.focus()  // 自动聚焦
+  const select = document.getElementById("iceSelect");
+  const other = document.getElementById("iceOther");
+  if(select.value === "其他"){
+      other.style.display = "block";
+      other.focus();
   } else {
-      other.style.display="none"
-      other.value=""
+      other.style.display = "none";
+      other.value = "";
   }
 }
 
 function toggleSugarOther(){
-  const select=document.getElementById("sugarSelect")
-  const other=document.getElementById("sugarOther")
-  if(select.value==="其他"){
-      other.style.display="block"
-      other.focus()  // 自动聚焦
+  const select = document.getElementById("sugarSelect");
+  const other = document.getElementById("sugarOther");
+  if(select.value === "其他"){
+      other.style.display = "block";
+      other.focus();
   } else {
-      other.style.display="none"
-      other.value=""
+      other.style.display = "none";
+      other.value = "";
   }
 }
 
 function showFeedback(msg,isSuccess){
-    const feedback=document.getElementById("feedback")
-    feedback.textContent=msg
-    feedback.className="feedback "+(isSuccess?"success fadeout":"error")
+    const feedback = document.getElementById("feedback");
+    feedback.textContent = msg;
+    feedback.className = "feedback "+(isSuccess?"success fadeout":"error");
     
     if(isSuccess){
-        // 0.5秒后开始淡出
-        setTimeout(()=>{feedback.classList.add("hide")},500)
-        // 3秒后清空
+        setTimeout(()=>{feedback.classList.add("hide")},500);
         setTimeout(()=>{
-            feedback.textContent=""
-            feedback.classList.remove("fadeout","hide")
-        },3000)
+            feedback.textContent="";
+            feedback.classList.remove("fadeout","hide");
+        },3000);
     }
 }
 
 function setError(el,msg){
-    el.classList.add("error")
-    setTimeout(()=>el.classList.remove("error"),500)
-    showFeedback(msg,false)
+    el.classList.add("error");
+    setTimeout(()=>el.classList.remove("error"),500);
+    showFeedback(msg,false);
 }
 
-document.getElementById("submitBtn").onclick=async function(){
-    const shop=document.getElementById("shop")
-    const drink=document.getElementById("drink")
-    const iceSelect=document.getElementById("iceSelect")
-    const iceOther=document.getElementById("iceOther")
-    const sugarSelect=document.getElementById("sugarSelect")
-    const sugarOther=document.getElementById("sugarOther")
-    const note=document.getElementById("note")
+document.getElementById("submitBtn").onclick = async function(){
+    const shop = document.getElementById("shop");
+    const drink = document.getElementById("drink");
+    const iceSelect = document.getElementById("iceSelect");
+    const iceOther = document.getElementById("iceOther");
+    const sugarSelect = document.getElementById("sugarSelect");
+    const sugarOther = document.getElementById("sugarOther");
+    const note = document.getElementById("note");
 
-    let ice=iceSelect.value
-    if(ice==="其他") ice=iceOther.value.trim()
+    let ice = iceSelect.value;
+    if(ice === "其他") ice = iceOther.value.trim();
 
-    let sugar=sugarSelect.value
-    if(sugar==="其他") sugar=sugarOther.value.trim()
+    let sugar = sugarSelect.value;
+    if(sugar === "其他") sugar = sugarOther.value.trim();
 
     if(!shop.value){setError(shop,"请选择奶茶店");return;}
     if(!drink.value.trim()){setError(drink,"请输入奶茶名称");return;}
@@ -165,25 +167,25 @@ document.getElementById("submitBtn").onclick=async function(){
     if(!sugar){setError(sugarSelect,"请选择或填写糖度");return;}
     if(sugar.length>20){setError(sugarSelect,"糖度不能超过20字");return;}
 
-    const {error}=await supabase.from("submissions").insert([{
-        nickname:shop.value,
-        content:drink.value.trim(),
-        ice:ice,
-        sugar:sugar,
-        note:note.value.trim()
-    }])
+    const {error} = await supabase.from("submissions").insert([{
+        nickname: shop.value,
+        content: drink.value.trim(),
+        ice: ice,
+        sugar: sugar,
+        note: note.value.trim()
+    }]);
 
     if(error){
-        showFeedback("提交失败："+error.message,false)
-    }else{
-        showFeedback("提交成功！",true)
-        shop.value=""
-        drink.value=""
-        iceSelect.value=""
-        iceOther.value=""
-        sugarSelect.value=""
-        sugarOther.value=""
-        note.value=""
+        showFeedback("提交失败："+error.message,false);
+    } else {
+        showFeedback("提交成功！",true);
+        shop.value="";
+        drink.value="";
+        iceSelect.value="";
+        iceOther.value="";
+        sugarSelect.value="";
+        sugarOther.value="";
+        note.value="";
     }
 }
 </script>
